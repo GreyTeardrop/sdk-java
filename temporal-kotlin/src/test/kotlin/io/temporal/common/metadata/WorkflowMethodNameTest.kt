@@ -22,6 +22,8 @@ package io.temporal.common.metadata
 
 import io.temporal.workflow.QueryMethod
 import io.temporal.workflow.SignalMethod
+import io.temporal.workflow.UpdateMethod
+import io.temporal.workflow.UpdateValidatorMethod
 import io.temporal.workflow.WorkflowInterface
 import io.temporal.workflow.WorkflowMethod
 import org.junit.Assert.assertEquals
@@ -52,6 +54,46 @@ class WorkflowMethodNameTest {
   @Test(expected = IllegalArgumentException::class)
   fun `workflowSignalName should fail if not provided with a method reference`() {
     workflowSignalName(::String)
+  }
+
+  @Test
+  fun `workflowUpdateName should resolve simple workflow update name by update method reference`() {
+    assertEquals("update1", workflowUpdateName(Workflow1::update1))
+  }
+
+  @Test
+  fun `workflowUpdateName should resolve simple workflow update name by update validator method reference`() {
+    assertEquals("update1", workflowUpdateName(Workflow1::update1Validator))
+  }
+
+  @Test
+  fun `workflowUpdateName should resolve workflow update name override by update method reference`() {
+    assertEquals("customUpdateName", workflowUpdateName(Workflow1::update2))
+  }
+
+  @Test
+  fun `workflowUpdateValidatorName should resolve workflow update name override by update validator method reference`() {
+    assertEquals("customUpdateName", workflowUpdateName(Workflow1::update2Validator))
+  }
+
+  @Test(expected = IllegalArgumentException::class)
+  fun `workflowUpdateName should fail if provided with query method instead of update method`() {
+    workflowUpdateName(Workflow1::query1)
+  }
+
+  @Test(expected = IllegalArgumentException::class)
+  fun `workflowUpdateName should fail if provided with signal method instead of update method`() {
+    workflowUpdateName(Workflow1::signal1)
+  }
+
+  @Test(expected = IllegalArgumentException::class)
+  fun `workflowUpdateName should fail if used with non-workflow method`() {
+    workflowUpdateName(NotAWorkflow::aMethod)
+  }
+
+  @Test(expected = IllegalArgumentException::class)
+  fun `workflowUpdateName should fail if not provided with a method reference`() {
+    workflowUpdateName(::String)
   }
 
   @Test
@@ -90,6 +132,18 @@ class WorkflowMethodNameTest {
 
     @SignalMethod(name = "customSignalName")
     fun signal2()
+
+    @UpdateMethod
+    fun update1(input: String): Int
+
+    @UpdateValidatorMethod(updateName = "update1")
+    fun update1Validator(input: String)
+
+    @UpdateMethod(name = "customUpdateName")
+    fun update2(input: Long): String
+
+    @UpdateValidatorMethod(updateName = "customUpdateName")
+    fun update2Validator(input: Long)
 
     @QueryMethod
     fun query1(): Int

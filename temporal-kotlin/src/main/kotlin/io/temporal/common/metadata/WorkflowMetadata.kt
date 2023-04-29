@@ -59,6 +59,17 @@ fun workflowSignalName(method: KFunction<*>): String {
 }
 
 /**
+ * Resolves workflow update name by a reference to workflow update method or workflow update validator method.
+ *
+ * ```kotlin
+ * val workflowUpdateName = workflowUpdateName(WorkflowInterface::updateMethod)
+ * ```
+ */
+fun workflowUpdateName(method: KFunction<*>): String {
+  return workflowMethodName(method, WorkflowMethodType.UPDATE, WorkflowMethodType.UPDATE_VALIDATOR)
+}
+
+/**
  * Resolves workflow query type by the workflow query method reference.
  *
  * ```kotlin
@@ -69,14 +80,14 @@ fun workflowQueryType(method: KFunction<*>): String {
   return workflowMethodName(method, WorkflowMethodType.QUERY)
 }
 
-private fun workflowMethodName(method: KFunction<*>, type: WorkflowMethodType): String {
+private fun workflowMethodName(method: KFunction<*>, vararg types: WorkflowMethodType): String {
   val javaMethod = method.javaMethod
     ?: throw IllegalArgumentException("Invalid method reference $method")
   val interfaceMetadata = POJOWorkflowInterfaceMetadata.newInstance(javaMethod.declaringClass)
   val methodMetadata = interfaceMetadata.methodsMetadata.find { it.workflowMethod == javaMethod }
     ?: throw IllegalArgumentException("Not a workflow method reference $method")
-  if (methodMetadata.type != type) {
-    throw IllegalArgumentException("Workflow method $method is not of expected type $type")
+  if (methodMetadata.type !in types) {
+    throw IllegalArgumentException("Workflow method $method is not of expected types (${types.joinToString()})")
   }
   return methodMetadata.name
 }
