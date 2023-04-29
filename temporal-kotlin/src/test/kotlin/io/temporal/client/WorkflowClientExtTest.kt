@@ -75,6 +75,35 @@ class WorkflowClientExtTest {
     Assert.assertEquals(listOf("v1", "v2"), untypedStub.getResult<List<String>>())
   }
 
+  @Test
+  fun `signalWithStart DSL should work the same as the original method`() {
+    val workflowClient = testWorkflowRule.workflowClient
+
+    val typedStub = workflowClient.newWorkflowStub<TestWorkflow> {
+      setWorkflowId("1")
+      setTaskQueue(testWorkflowRule.taskQueue)
+    }
+    workflowClient.signalWithStart(typedStub) {
+      start(Duration.ofSeconds(3))
+      collectString("v1")
+    }
+
+    testWorkflowRule.testEnvironment.sleep(Duration.ofSeconds(1))
+
+    val typedStub2 = workflowClient.newWorkflowStub<TestWorkflow> {
+      setWorkflowId("1")
+      setTaskQueue(testWorkflowRule.taskQueue)
+    }
+    workflowClient.signalWithStart(typedStub2) {
+      start(Duration.ofSeconds(5))
+      collectString("v2")
+    }
+
+    val untypedStub = WorkflowStub.fromTyped(typedStub)
+
+    Assert.assertEquals(listOf("v1", "v2"), untypedStub.getResult<List<String>>())
+  }
+
   @WorkflowInterface
   interface TestWorkflow {
     @WorkflowMethod

@@ -129,3 +129,28 @@ inline fun WorkflowClient.signalWithStart(
 ): WorkflowExecution {
   return signalWithStart(newSignalWithStartRequest().apply(signals))
 }
+
+/**
+ * Invoke `SignalWithStart` operation.
+ *
+ * ```kotlin
+ * val execution = workflowClient.signalWithStart(workflow) {
+ *     startMethod(startParams)
+ *     signalMethod(signalParams)
+ * }
+ * ```
+ *
+ * @param workflowStub a typed workflow stub
+ * @param workflowSignalAndStartCalls the inner block must include exactly two workflow method calls on [workflowStub].
+ *        One annotated with `@WorkflowMethod` and another with `@SignalMethod`.
+ * @see WorkflowClient.newSignalWithStartRequest
+ * @see WorkflowClient.signalWithStart
+ */
+inline fun <T> WorkflowClient.signalWithStart(
+  workflowStub: T,
+  crossinline workflowSignalAndStartCalls: T.() -> Unit
+): WorkflowExecution {
+  return signalWithStart {
+    add { workflowStub.workflowSignalAndStartCalls() }
+  }
+}
